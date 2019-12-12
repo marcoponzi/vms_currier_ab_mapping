@@ -92,10 +92,12 @@ def loop_replace(data1,data2):
   h1=word_histogram(data1)
   h2=word_histogram(data2)
   orig_diff=histo_difference(h1,h2)
-  top_n_1=top_n_sequences(data1,30,4)
-  top_n_1.remove('.')
-  top_n_1.remove('|')
-  top_n_2=top_n_sequences(data2,30,4)
+  top_n_1=top_n_sequences(data1,20,4)
+  if ('.' in top_n_1):
+    top_n_1.remove('.')
+  if ('|' in top_n_1):
+    top_n_1.remove('|')
+  top_n_2=top_n_sequences(data2,20,4)
   
   for seq1 in top_n_1:
     for seq2 in top_n_2:
