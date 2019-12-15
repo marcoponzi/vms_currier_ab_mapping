@@ -2,8 +2,7 @@ import sys
 import codecs
 import time
 import re
-import random
-import Levenshtein
+from collections import Counter
 from os.path import isfile, join
 import operator, math
 
@@ -30,14 +29,9 @@ def word_histogram(string):
   words=filter(None, re.split("[.|]+", string))
   res=dict()
   
-  # sum of histo must be 1
-  unit=1.0/float(len(words))
-  
-  for w in words:
-    if not(w in res.keys()):
-      res[w]=unit
-    else:
-      res[w]=res[w]+unit
+  cnt=Counter(words)
+  for w in cnt.keys():
+    res[w]=float(cnt[w])/float(len(words))
   return res
   
   
@@ -92,12 +86,12 @@ def loop_replace(data1,data2):
   h1=word_histogram(data1)
   h2=word_histogram(data2)
   orig_diff=histo_difference(h1,h2)
-  top_n_1=top_n_sequences(data1,20,4)
+  top_n_1=top_n_sequences(data1,100,4)
   if ('.' in top_n_1):
     top_n_1.remove('.')
   if ('|' in top_n_1):
     top_n_1.remove('|')
-  top_n_2=top_n_sequences(data2,20,4)
+  top_n_2=top_n_sequences(data2,100,4)
   
   for seq1 in top_n_1:
     for seq2 in top_n_2:
@@ -116,12 +110,15 @@ data2=read_file(sys.argv[2])
 
 print data1[:1000]
 h1= word_histogram(data1)
+print
 print data2[:1000]
 h2= word_histogram(data2)
-print histo_difference(h1,h2)
+print 'DIFF:' + frmt(histo_difference(h1,h2))
 
 #print word_histogram(data1)
 #print word_histogram(data2)
 
-print top_n_sequences(data1,500,3)
+print top_n_sequences(data1,130,4)
+print
+print top_n_sequences(data2,130,4)
 loop_replace(data1,data2)
