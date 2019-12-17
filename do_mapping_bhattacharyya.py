@@ -51,6 +51,7 @@ def bigram_histogram(string):
   return res
   
 
+# Bhattacharyya
 def histo_difference(h1,h2):
   tot=0
   #print set(h1.keys()).union(h2.keys())
@@ -61,9 +62,9 @@ def histo_difference(h1,h2):
     v2=0
     if (k in h2.keys()):
       v2=h2[k]
-    tot+=abs(v1-v2)
+    tot+=math.sqrt(v1*v2)
   # value in 0..1 range
-  return (tot/2.0)
+  return 1.0-tot
   
   
 # reads whole file into a string
@@ -113,7 +114,7 @@ h1= word_histogram(data1)
 print
 print data2[:1000]
 h2= word_histogram(data2)
-print 'DIFF:' + frmt(histo_difference(h1,h2))
+print 'BHATT DIFF:' + frmt(histo_difference(h1,h2))
 
 #print word_histogram(data1)
 #print word_histogram(data2)
