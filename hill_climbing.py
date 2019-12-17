@@ -186,7 +186,7 @@ def evaluate(solution):
     # minimize difference both from source and target histograms
     diff_h2=histo_difference(newh,h2) # target
     diff_h1=histo_difference(newh,h1) # source
-    tot= (diff_h2+diff_h1/20.0)*(10+len(solution))
+    tot= (diff_h2+diff_h1/10.0)*(10+len(solution))
     print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" orig:"+frmt(diff_h1)+" len:"+str(len(solution))
     return tot
 
@@ -206,11 +206,11 @@ def mutate_solution(solution):
       temp=solution[i1]
       solution[i1]=solution[i2]
       solution[i2]=temp
-    elif (rand < .1 and len(solution)>1):
+    elif (rand < .2 and len(solution)>1):
       index = random.randint(0, len(solution) - 1)
       print("DEL ", solution[index], index)
       del solution[index]
-    elif (rand<.4):
+    elif (rand<.5):
       index = random.randint(0, len(solution) - 1)
       solution[index]=alter_rule(solution,index)
     else:
