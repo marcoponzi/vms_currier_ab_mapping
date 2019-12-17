@@ -40,6 +40,10 @@ def top_n_sequences(string, N, max_len):
 def histo_difference(h1,h2):
   tot=0
   #print set(h1.keys()).union(h2.keys())
+  min_val=9999999
+  min_v1=-1
+  min_v2=-1
+  min_key='XXX'
   for k in set(h1.keys()).union(h2.keys()):
     v1=0
     if (k in h1.keys()):
@@ -47,8 +51,15 @@ def histo_difference(h1,h2):
     v2=0
     if (k in h2.keys()):
       v2=h2[k]
+    val=math.sqrt(v1*v2)/float(max(v1,v2))
+    if (val<min_val):
+      min_val=val
+      min_v1=v1
+      min_v2=v2
+      min_key=k
     tot+=math.sqrt(v1*v2)
   # value in 0..1 range
+  #print("WORST KEY:",min_key," val:"+str(min_val)+" v1:"+str(min_v1)+" v2:"+str(min_v2))
   return -1*np.log(tot)
   
   
@@ -97,6 +108,41 @@ def new_rule(solution):
 def alter_rule(solution,index):
     all_left=list()
     left,right=solution[index]
+    
+    rand = random.random()
+
+    c1=random.randint(0,len(data1)-1)
+    c2=random.randint(0,len(data2)-1)
+    rand1=random.random()
+    res=''
+    newl=left
+    newr=right
+    if (rand<0.1 and
+        len(left)>2 and
+        len(right)>2):
+      if (rand1<.8):
+        randl=random.randrange(len(left))
+        newl=left[:randl]+left[randl+1:]
+      if(rand1>.2):
+        randr=random.randrange(len(right))
+        newr=right[:randr]+right[randr+1:]
+      res = [newl,newr]
+    elif (rand<0.15 and len(left)<MAXLEN and len(right)<MAXLEN):
+      if (rand1<.8):
+        newl=left+data1[c1]
+      if(rand1>.2):
+        newr=right+data2[c2]
+      res = [newl,newr]
+    elif (rand<0.2 and len(left)<MAXLEN and len(right)<MAXLEN):
+      if (rand1<.8):
+        newl=data1[c1]+left
+      if(rand1>.2):
+        newr=data2[c2]+right
+      res = [newl,newr]
+    if (res!=''):
+      print("ALTER character new:", res, '  old:',left,right)
+      return res
+    
     for subst in solution:
       all_left.append(subst[0])
     # index rule is going to be altered
@@ -104,16 +150,24 @@ def alter_rule(solution,index):
     for i in range(0,len(top_n_1)):
       newl=random.choice(top_n_1)
       newr=random.choice(top_n_2)
+      newl_ok=False
+      newr_ok=False
       if (newl!=left and
           #((newl in left) or (left in newl)) and
           not reject_rule(newl,right,all_left)):
-        print("ALTER left new:", newl,right, '  old:',left,right)
-        return [newl,right]
-      elif (newr!=right and
+        newl_ok=True
+      if (newr!=right and
             #((newr in right) or (right in newr)) and
             not reject_rule(left,newr,all_left)):
-        print("ALTER right new:", left,newr, '  old:',left,right)
-        return [left,newr]
+        if (newl_ok and newl!=newr):
+          print("ALTER left/right new:", newl,newr, '  old:',left,right)
+          return [newl,newr]
+        else:
+          print("ALTER right new:", left,newr, '  old:',left,right)
+          return [left,newr]
+      elif newl_ok:
+        print("ALTER left new:", newl,right, '  old:',left,right)
+        return [newl,right]
     print("ALTER FAIL")
     return new_rule(solution)
 
@@ -127,11 +181,12 @@ def evaluate(solution):
     newdata=data1
     for subst in solution:
       newdata=newdata.replace(subst[0],subst[1])
+    #print "newdata: " +newdata[:1000] 
     newh=bigram_histogram(newdata)
     # minimize difference both from source and target histograms
-    diff_h2=histo_difference(newh,h2)
-    diff_h1=histo_difference(newh,h1)
-    tot= histo_difference(newh,h2)+histo_difference(newh,h1)
+    diff_h2=histo_difference(newh,h2) # target
+    diff_h1=histo_difference(newh,h1) # source
+    tot= (diff_h2+diff_h1/20.0)*(10+len(solution))
     print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" orig:"+frmt(diff_h1)+" len:"+str(len(solution))
     return tot
 
@@ -144,18 +199,18 @@ def mutate_solution(solution):
       print("SWAP",i1,i2, index)
       solution[i1][index]=solution[i2][index]
       
-    elif (rand<.07):
+    elif (rand<.001):
       i1=random.randint(0, len(solution) - 1)
       i2=random.randint(0, len(solution) - 1)
       print("SHIFT",i1,i2)
       temp=solution[i1]
       solution[i1]=solution[i2]
       solution[i2]=temp
-    elif (rand < .1 and len(solution)>2):
+    elif (rand < .1 and len(solution)>1):
       index = random.randint(0, len(solution) - 1)
       print("DEL ", solution[index], index)
       del solution[index]
-    elif (rand<.3):
+    elif (rand<.4):
       index = random.randint(0, len(solution) - 1)
       solution[index]=alter_rule(solution,index)
     else:
@@ -188,7 +243,8 @@ if ('|' in top_n_1):
   top_n_1.remove('|')
 top_n_2=top_n_sequences(data2,500,MAXLEN)
 
-best = generate_random_solution(MAXRULES)
+best = generate_random_solution(MAXRULES/2)
+#best = [['.gli.','.li.'],['ello.','el.']]
 best_score = evaluate(best)
 i=0
 print(i,' NEW Best score so far', best_score, 'Solution', best)
@@ -204,7 +260,7 @@ while True:
     mutate_solution(new_solution)
 
     score = evaluate(new_solution)
-    if score < best_score: 
+    if score <= best_score: 
         best = new_solution
         best_score = score
         print(i,' NEW Best score so far', best_score, 'Solution', best)
