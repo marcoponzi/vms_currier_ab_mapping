@@ -105,10 +105,8 @@ def new_rule(solution):
       right=rule_sub_string(data2)
     return [left,right]
     
-def alter_rule(solution,index):
-    all_left=list()
-    left,right=solution[index]
     
+def single_character_alteration(left,right):
     rand = random.random()
 
     c1=random.randint(0,len(data1)-1)
@@ -127,7 +125,7 @@ def alter_rule(solution,index):
         randr=random.randrange(len(right))
         newr=right[:randr]+right[randr+1:]
       res = [newl,newr]
-    elif (rand<0.15 and len(left)<MAXLEN and len(right)<MAXLEN):
+    elif (rand<0.3 and len(left)<MAXLEN and len(right)<MAXLEN):
       temp=left+data1[c1]
       if (rand1<.8 and temp in top_n_1):
         newl=temp
@@ -135,7 +133,7 @@ def alter_rule(solution,index):
       if (rand1>.2 and temp in top_n_2):
         newr=temp
       res = [newl,newr]
-    elif (rand<0.2 and len(left)<MAXLEN and len(right)<MAXLEN):
+    elif (rand<0.5 and len(left)<MAXLEN and len(right)<MAXLEN):
       temp=data1[c1]+left
       if (rand1<.8 and temp in top_n_1):
         newl=temp
@@ -143,10 +141,19 @@ def alter_rule(solution,index):
       if (rand1>.2 and temp in top_n_2):
         newr=temp
       res = [newl,newr]
+    return res
+
+    
+def alter_rule(solution,index):
+
+    left,right=solution[index]
+    
+    res=single_character_alteration(left,right)
     if (res!='' and (res[0]!=left or res[1]!=right)):
       print("ALTER character new:", res, '  old:',left,right)
       return res
     
+    all_left=list()
     for subst in solution:
       all_left.append(subst[0])
     # index rule is going to be altered
