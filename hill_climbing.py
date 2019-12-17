@@ -185,9 +185,11 @@ def evaluate(solution):
     newh=bigram_histogram(newdata)
     # minimize difference both from source and target histograms
     diff_h2=histo_difference(newh,h2) # target
-    diff_h1=histo_difference(newh,h1) # source
-    tot= (diff_h2+diff_h1/10.0)*(10+len(solution))
-    print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" orig:"+frmt(diff_h1)+" len:"+str(len(solution))
+    #diff_h1=histo_difference(newh,h1) # source
+    #tot= (diff_h2+diff_h1/10.0)*(5+len(solution))
+    tot=diff_h2*(10+len(solution))
+    #print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" orig:"+frmt(diff_h1)+" len:"+str(len(solution))
+    print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" len:"+str(len(solution))
     return tot
 
 def mutate_solution(solution):
@@ -210,7 +212,7 @@ def mutate_solution(solution):
       index = random.randint(0, len(solution) - 1)
       print("DEL ", solution[index], index)
       del solution[index]
-    elif (rand<.5):
+    elif (rand<.6):
       index = random.randint(0, len(solution) - 1)
       solution[index]=alter_rule(solution,index)
     else:
@@ -242,6 +244,9 @@ if ('.' in top_n_1):
 if ('|' in top_n_1):
   top_n_1.remove('|')
 top_n_2=top_n_sequences(data2,500,MAXLEN)
+
+print("top_n_1 ",top_n_1)
+print("top_n_2 ",top_n_2)
 
 best = generate_random_solution(MAXRULES/2)
 #best = [['.gli.','.li.'],['ello.','el.']]
