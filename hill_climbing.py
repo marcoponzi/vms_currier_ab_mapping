@@ -4,9 +4,10 @@ import sys
 import re
 import math
 import operator
+import numpy as np
 
 def frmt(myfloat):
-  return "{:.5f}".format(myfloat)
+  return "{:.6f}".format(myfloat)
 
 def bigram_histogram(string):
   res=dict()
@@ -48,7 +49,7 @@ def histo_difference(h1,h2):
       v2=h2[k]
     tot+=math.sqrt(v1*v2)
   # value in 0..1 range
-  return 1.0-tot
+  return -1*np.log(tot)
   
   
 # reads whole file into a string
@@ -67,15 +68,12 @@ def read_file(fname):
 	
 def rule_sub_string(data):
     start=random.randint(0,len(data)-MAXLEN)
-    return data[start:start+random.randint(1,MAXLEN)]
-	
-def new_rule(solution):
-    left=rule_sub_string(data1)
-    right=rule_sub_string(data2)
-    all_left=list()
-    for subst in solution:
-      all_left.append(subst[0])
-    while (left==right 
+    # favour shorter substrings
+    strlen=min(random.randint(1,MAXLEN),random.randint(1,MAXLEN),random.randint(1,MAXLEN))
+    return data[start:start+strlen]
+    
+def reject_rule(left,right,all_left):
+  return (left==right 
            or
            ((left[0]!=right[0] or
              left[0] in ['.','|'])
@@ -83,10 +81,41 @@ def new_rule(solution):
            (left[-1]!=right[-1] or
             left[-1] in ['.','|'])) 
            or
-           left in all_left):
+           left in all_left)
+	
+def new_rule(solution):
+    left=rule_sub_string(data1)
+    right=rule_sub_string(data2)
+    all_left=list()
+    for subst in solution:
+      all_left.append(subst[0])
+    while reject_rule(left,right,all_left):
       left=rule_sub_string(data1)
       right=rule_sub_string(data2)
     return [left,right]
+    
+def alter_rule(solution,index):
+    all_left=list()
+    left,right=solution[index]
+    for subst in solution:
+      all_left.append(subst[0])
+    # index rule is going to be altered
+    all_left.remove(left)
+    for i in range(0,len(top_n_1)):
+      newl=random.choice(top_n_1)
+      newr=random.choice(top_n_2)
+      if (newl!=left and
+          #((newl in left) or (left in newl)) and
+          not reject_rule(newl,right,all_left)):
+        print("ALTER left new:", newl,right, '  old:',left,right)
+        return [newl,right]
+      elif (newr!=right and
+            #((newr in right) or (right in newr)) and
+            not reject_rule(left,newr,all_left)):
+        print("ALTER right new:", left,newr, '  old:',left,right)
+        return [left,newr]
+    print("ALTER FAIL")
+    return new_rule(solution)
 
 def generate_random_solution(length):
   solution=list()
@@ -97,9 +126,14 @@ def generate_random_solution(length):
 def evaluate(solution):
     newdata=data1
     for subst in solution:
-      newdata=data1.replace(subst[0],subst[1])
+      newdata=newdata.replace(subst[0],subst[1])
     newh=bigram_histogram(newdata)
-    return histo_difference(newh,h2)
+    # minimize difference both from source and target histograms
+    diff_h2=histo_difference(newh,h2)
+    diff_h1=histo_difference(newh,h1)
+    tot= histo_difference(newh,h2)+histo_difference(newh,h1)
+    print "DIFF:"+str(tot)+" trgt:"+frmt(diff_h2)+" orig:"+frmt(diff_h1)+" len:"+str(len(solution))
+    return tot
 
 def mutate_solution(solution):
     rand=random.random()
@@ -109,24 +143,29 @@ def mutate_solution(solution):
       i2=random.randint(0, len(solution) - 1)
       print("SWAP",i1,i2, index)
       solution[i1][index]=solution[i2][index]
-    elif (rand<.05):
+      
+    elif (rand<.07):
       i1=random.randint(0, len(solution) - 1)
       i2=random.randint(0, len(solution) - 1)
       print("SHIFT",i1,i2)
       temp=solution[i1]
       solution[i1]=solution[i2]
       solution[i2]=temp
-    #elif (rand < .3 and len(solution)>2):
-    #  index = random.randint(0, len(solution) - 1)
-    #  print("DEL ", solution[index], index)
-    #  del solution[index]
+    elif (rand < .1 and len(solution)>2):
+      index = random.randint(0, len(solution) - 1)
+      print("DEL ", solution[index], index)
+      del solution[index]
+    elif (rand<.3):
+      index = random.randint(0, len(solution) - 1)
+      solution[index]=alter_rule(solution,index)
     else:
+      index=-1
       if (len(solution)==MAXRULES):
         index = random.randint(0, len(solution) - 1)
         del solution[index]
       rule=new_rule(solution)
       print("RULE ",rule, index)
-      solution.append(rule)
+      solution.insert(0,rule)
     
 
 data1=read_file(sys.argv[1])
@@ -142,12 +181,12 @@ print 'BHATT DIFF:' + frmt(histo_difference(h1,h2))
 MAXLEN=5
 MAXRULES=10
 
-top_n_1=top_n_sequences(data1,1000,MAXLEN)
+top_n_1=top_n_sequences(data1,500,MAXLEN)
 if ('.' in top_n_1):
   top_n_1.remove('.')
 if ('|' in top_n_1):
   top_n_1.remove('|')
-top_n_2=top_n_sequences(data2,1000,MAXLEN)
+top_n_2=top_n_sequences(data2,500,MAXLEN)
 
 best = generate_random_solution(MAXRULES)
 best_score = evaluate(best)
@@ -165,7 +204,7 @@ while True:
     mutate_solution(new_solution)
 
     score = evaluate(new_solution)
-    if evaluate(new_solution) < best_score: 
+    if score < best_score: 
         best = new_solution
         best_score = score
         print(i,' NEW Best score so far', best_score, 'Solution', best)
