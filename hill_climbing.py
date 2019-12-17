@@ -118,8 +118,8 @@ def alter_rule(solution,index):
     newl=left
     newr=right
     if (rand<0.1 and
-        len(left)>2 and
-        len(right)>2):
+        len(left)>1 and
+        len(right)>1):
       if (rand1<.8):
         randl=random.randrange(len(left))
         newl=left[:randl]+left[randl+1:]
@@ -128,18 +128,22 @@ def alter_rule(solution,index):
         newr=right[:randr]+right[randr+1:]
       res = [newl,newr]
     elif (rand<0.15 and len(left)<MAXLEN and len(right)<MAXLEN):
-      if (rand1<.8):
-        newl=left+data1[c1]
-      if(rand1>.2):
-        newr=right+data2[c2]
+      temp=left+data1[c1]
+      if (rand1<.8 and temp in top_n_1):
+        newl=temp
+      temp=right+data2[c2]
+      if (rand1>.2 and temp in top_n_2):
+        newr=temp
       res = [newl,newr]
     elif (rand<0.2 and len(left)<MAXLEN and len(right)<MAXLEN):
-      if (rand1<.8):
-        newl=data1[c1]+left
-      if(rand1>.2):
-        newr=data2[c2]+right
+      temp=data1[c1]+left
+      if (rand1<.8 and temp in top_n_1):
+        newl=temp
+      temp=data2[c2]+right
+      if (rand1>.2 and temp in top_n_2):
+        newr=temp
       res = [newl,newr]
-    if (res!=''):
+    if (res!='' and (res[0]!=left or res[1]!=right)):
       print("ALTER character new:", res, '  old:',left,right)
       return res
     
@@ -208,11 +212,11 @@ def mutate_solution(solution):
       temp=solution[i1]
       solution[i1]=solution[i2]
       solution[i2]=temp
-    elif (rand < .2 and len(solution)>1):
+    elif (rand < .1 and len(solution)>1):
       index = random.randint(0, len(solution) - 1)
       print("DEL ", solution[index], index)
       del solution[index]
-    elif (rand<.6):
+    elif (rand<.5):
       index = random.randint(0, len(solution) - 1)
       solution[index]=alter_rule(solution,index)
     else:
@@ -238,12 +242,12 @@ print 'BHATT DIFF:' + frmt(histo_difference(h1,h2))
 MAXLEN=5
 MAXRULES=10
 
-top_n_1=top_n_sequences(data1,500,MAXLEN)
+top_n_1=top_n_sequences(data1,1000,MAXLEN)
 if ('.' in top_n_1):
   top_n_1.remove('.')
 if ('|' in top_n_1):
   top_n_1.remove('|')
-top_n_2=top_n_sequences(data2,500,MAXLEN)
+top_n_2=top_n_sequences(data2,1000,MAXLEN)
 
 print("top_n_1 ",top_n_1)
 print("top_n_2 ",top_n_2)
